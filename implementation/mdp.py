@@ -8,6 +8,7 @@ Created on Thu Jan 11 08:30:53 2018
 import numpy as np
 from utils import sharpe
 
+VERBOSE =  False
 
 class Mdp:
     def __init__(self, rl_method, r_t, L, transaction_cost):
@@ -35,10 +36,15 @@ class Mdp:
     # return next state, reward
     def step(self, t, action_t):
         self.action[t] = action_t
-        self.reward[t] = sharpe(action_t * self.r_t[t + 1 - self.L:t + 1]-self.delta_cost, self.L) \
+        self.reward[t] = sharpe(action_t * self.r_t[t + 2 - self.L:t + 2]-self.delta_cost, self.L) \
             if action_t != 0 else 0
+                
         self.capital[t + 1] = self.capital[t] * \
             (1 + action_t * self.r_t[t + 1]- self.delta_cost *(action_t!=0))
+        
+        if VERBOSE: print(t,': capital[t]',self.capital[t])
+        if VERBOSE: print(t,': capital[t+1]',self.capital[t+1])
+        if VERBOSE: print(t,'matrix', self.capital[t-5:t+1])
         next_state = self.rl_method.update(t, self.action)
         return (next_state, self.reward[t])
     

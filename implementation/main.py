@@ -17,6 +17,8 @@ from plot_helper import plot_3_ts, plot_array
 np.random.seed(1335)
 np.set_printoptions()
 
+VERBOSE = False
+
 # initial parameters
 folder = 'data\\'
 files = ['Generali_G.MI.csv',
@@ -29,12 +31,13 @@ field = 'Close'
 N = 5
 M = 1
 L = 22
-alpha = 0.05
+alpha_linear = 0.005
+alpha_grid = 0.05
 gamma = 0.95
 mean = 0.00
 sigma = 0.01
 
-transaction_cost = 0#0.0019
+transaction_cost = #0.0019
 delta_cost = transaction_cost / 2
 epsilons = [0.025, 0.05, 0.1]
 epsilon = epsilons[2]
@@ -48,22 +51,20 @@ dates = data_object.get_field('Date')
 r_t = np.log(data[1:]) - np.log(data[:-1])
 
 T_max = r_t.shape[0]
-
-#method_type = 'Q-Learning'
-method_type = 'SARSA'
+r_t = r_t[:T_max+1]
+method_type = 'Q-Learning'
+#method_type = 'SARSA'
 
 random_init = False
 random_init = True
 
 episode_reset = False
-episode_reset = True
+episode_reset = False
 
-adaptive_lr = False
-adaptive_lr = True
 
-rl = rlm.Rl_linear(r_t, N, M, method_type, alpha, gamma, random_init, episode_reset, adaptive_lr, mean, sigma)
-rl2 = rlm.Rl_full_matrix(r_t, N, M, method_type, epsilon, alpha, gamma, random_init, episode_reset, adaptive_lr, mean, sigma)
-mdp = Mdp( rl, r_t, L, transaction_cost)
+rl = rlm.Rl_linear(r_t, N, M, method_type, alpha_linear, gamma, random_init, mean, sigma)
+rl2 = rlm.Rl_full_matrix(r_t, N, M, method_type, alpha_grid, gamma, random_init, mean, sigma)
+mdp = Mdp( rl2, r_t, L, transaction_cost)
 
 # computes return
 actions = []
@@ -75,19 +76,21 @@ for iter in range(iterations_nb):
     
     for t in range(t0, T_max - 1):
         # exploration exploitation 
-        action_t = np.random.randint(-1, 2) if np.random.rand() < epsilon \
-            else rl.max_action(state)
-        
+        if np.random.rand() < epsilon:
+            action_t = np.random.randint(-1, 2)
+            if VERBOSE: print(t,': random action',action_t)
+        else:
+            action_t = mdp.rl_method.best_action()
+            if VERBOSE: print(t,': changed action',action_t)
         # update
         next_state, reward_t = mdp.step(t, action_t)
-        
         # learn
-        rl.learn(t, action_t, reward_t )
+        mdp.rl_method.learn(t, action_t, reward_t )
 
     actions.append(mdp.action)
     capitals.append(mdp.capital)
 
-final_action = np.zeros(T_max)
+final_action = np.zeros(actions[0].shape[0])
 for action_i in actions:
     final_action += action_i
 final_action /= iterations_nb
@@ -109,11 +112,15 @@ for t in range(T_max - 1):
 
 avg_capital = 0
 for cap_i in capitals:
-    avg_capital += cap_i[-1]
+    avg_capital += cap_i[-2]
 avg_capital  /= iterations_nb
 
+if VERBOSE: print('actions', actions[0])
+if VERBOSE: print('final_capital', final_capital)
+
+
 # plot result
-plot_result = True
+plot_result = False
 if plot_result:
     max_population = 30
     max_plot = min(mdp.capital.shape[0],max_population)
@@ -130,4 +137,4 @@ print(final_capital[-1])
 print(avg_capital)
 year_frac = pd.Timedelta( dates[-1] - dates[1]).days / 365.25
 print(final_action[final_action!=0].shape[0]/year_frac)
-plt.plot(rl.theta)
+#plt.plot(rl.theta)
