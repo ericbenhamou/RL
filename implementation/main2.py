@@ -20,8 +20,6 @@ from utils import squashing_function
 #from utils import sharpe
 from plot_helper import plot_3_ts, plot_array
 
-VERBOSE = True
-
 
 # for reproducibility
 np.random.seed(1335)
@@ -140,13 +138,11 @@ for iter in range(iterations_nb):
 
         if (np.random.rand() < epsilon):
             action[t] = np.random.randint(-1, 2)
-            if VERBOSE: print(t,'random action:',  action[t])
         else:
             if Q_linear:
                 action[t] = np.sign(theta[N + M + 1])
             else:
                 action[t] = np.argmax(q_matrix[state, :]) - 1
-                if VERBOSE: print('best action',  action[t], ' state ', state)
 
         if Q_linear:
             next_states[0] = 1
@@ -169,24 +165,10 @@ for iter in range(iterations_nb):
                 max_action = np.sign(theta[N + M + 1])
                 d_k = reward[t] + gamma * Q_func(next_states, max_action, theta) - Q_func(states, action[t], theta)
                 e_k = gamma * lambda_e * e + Gradient_Q(states, action[t], theta) 
-                if VERBOSE: print(t,': states:',states)
-                if VERBOSE: print(t,': next_states:',next_states)
-                if VERBOSE: print(t,': theta:',theta)
-                if VERBOSE: print(t,': reward[t]:',reward[t])
-                if VERBOSE: print(t,': Q[t]:', Q_func(next_states, max_action, theta))
-                if VERBOSE: print(t,': Gradient:',Gradient_Q(states, action[t], theta))
                 theta += learning_rate * d_k * e_k
             else:
                 max_action = np.argmax(q_matrix[next_state, :]) - 1
-                if VERBOSE: print('best action',  max_action, ' state ', next_state)
-                
-                if VERBOSE: print(t,': states:',state)
-                if VERBOSE: print(t,': next_states:',next_state)
-                if VERBOSE: print(t,': max_action:',max_action)
-                if VERBOSE: print(t,': learning_rate:', learning_rate)
-                if VERBOSE: print(t,': reward[t]:',reward[t])
-                if VERBOSE: print(t,': action[t]:',action[t])
-                
+               
                 q_matrix[state, int(action[t] + 1)] += learning_rate * (reward[t] + gamma *
                          q_matrix[next_state, max_action] - q_matrix[state, int(action[t] + 1)])
 
@@ -233,11 +215,9 @@ for cap_i in capitals:
 avg_capital  /= iterations_nb
 
 
-if VERBOSE: print('actions', actions[0])
-if VERBOSE: print('final_capital', final_capital)
-
 # plot result
-plot_result = False
+plot_result = True
+
 if plot_result:
     max_population = 30
     max_plot = min(capital.shape[0],max_population)

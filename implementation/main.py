@@ -17,7 +17,6 @@ from plot_helper import plot_3_ts, plot_array
 np.random.seed(1335)
 np.set_printoptions()
 
-VERBOSE = False
 
 # initial parameters
 folder = 'data\\'
@@ -78,10 +77,8 @@ for iter in range(iterations_nb):
         # exploration exploitation 
         if np.random.rand() < epsilon:
             action_t = np.random.randint(-1, 2)
-            if VERBOSE: print(t,': random action',action_t)
         else:
             action_t = mdp.rl_method.best_action()
-            if VERBOSE: print(t,': changed action',action_t)
         # update
         next_state, reward_t = mdp.step(t, action_t)
         # learn
@@ -114,9 +111,6 @@ avg_capital = 0
 for cap_i in capitals:
     avg_capital += cap_i[-2]
 avg_capital  /= iterations_nb
-
-if VERBOSE: print('actions', actions[0])
-if VERBOSE: print('final_capital', final_capital)
 
 
 # plot result
