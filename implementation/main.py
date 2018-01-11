@@ -113,7 +113,7 @@ for cap_i in capitals:
 avg_capital  /= iterations_nb
 
 # plot result
-plot_result = False
+plot_result = True
 if plot_result:
     max_population = 30
     max_plot = min(mdp.capital.shape[0],max_population)

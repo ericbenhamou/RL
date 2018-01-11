@@ -9,8 +9,6 @@ import numpy as np
 from utils import squashing_function
 from abc import ABCMeta, abstractmethod
 
-VERBOSE = False
-
 DIM_ACTIONS = 3
 
 '''
@@ -119,19 +117,6 @@ class Rl_linear(Rl_Method):
         else:
             raise ValueError('invalid algorithm: supported Q-Learning and SARSA')
         learning_rate = self.alpha/(t-self.t0) if self.adaptive_lr else self.alpha 
-            
-        if VERBOSE: print(t,': max_action',max_action)
-        if VERBOSE: print('states', self.states )
-        if VERBOSE: print('next_states', self.next_states )
-        if VERBOSE: print('action[t]', action_t )
-        if VERBOSE: print('reward[t]', reward_t )
-        if VERBOSE: print('gamma', self.gamma)
-        if VERBOSE: print('Qt', self.__Q(self.states, action_t))
-        if VERBOSE: print('Qt+1',  self.__Q(self.next_states, max_action))
-        if VERBOSE: print('learning_rate', learning_rate)
-        if VERBOSE: print('d_k', d_k)
-        if VERBOSE: print('grad', self.__Gradient_Q(self.next_states, action_t))
-            
         self.theta += learning_rate * d_k * self.__Gradient_Q(self.next_states, action_t) 
 
 
