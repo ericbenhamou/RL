@@ -11,6 +11,7 @@ from abc import ABCMeta, abstractmethod
 
 
 DIM_ACTIONS = 3
+VERBOSE = False
 
 '''
 Abstract class for RL method
@@ -106,6 +107,14 @@ class Rl_linear(Rl_Method):
             best_action = self.best_action()
             d_k = reward_t + self.gamma * self.__Q(self.next_states, best_action) \
                 - self.__Q(self.states, action_t)
+            if VERBOSE: print(t,': states:',self.states)
+            if VERBOSE: print(t,': next_states:',self.next_states)
+            if VERBOSE: print(t,': theta:',self.theta)
+            if VERBOSE: print(t,': reward[t]:',reward_t)
+            if VERBOSE: print(t,': Q[t]:', self.__Q(self.next_states, best_action ))
+            if VERBOSE: print(t,': Gradient:',self.__Gradient_Q(self.states, action_t))
+            
+                
         elif self.method_type == 'SARSA':
             d_k = reward_t + self.gamma * self.__Q(self.next_states, action_t) \
                 - self.__Q(self.states, action_t)
@@ -178,6 +187,7 @@ class Rl_full_matrix(Rl_Method):
         return self.next_state
     
     def best_action(self):
+        if VERBOSE: print('best action',  np.argmax(self.q_matrix[self.next_state, :]) - 1, ' state ', self.next_state)
         return np.argmax(self.q_matrix[self.next_state, :]) - 1
     
 
@@ -185,7 +195,16 @@ class Rl_full_matrix(Rl_Method):
         learning_rate = self.alpha / self.N_matrix[self.state, int(action_t + 1)] 
         if self.method_type == 'Q-Learning':
             next_action = self.best_action()
+            if VERBOSE: print(t,': states:',self.state)
+            if VERBOSE: print(t,': next_states:',self.next_state)
+            if VERBOSE: print(t,': best_action:',next_action)
+            if VERBOSE: print(t,': learning_rate:', learning_rate)
+            if VERBOSE: print(t,': reward[t]:',reward_t)
+            if VERBOSE: print(t,': action[t]:',action_t)
+            
+            
         elif self.method_type == 'SARSA':
             next_action = self.next_state
         self.q_matrix[self.state, int(action_t + 1)] += learning_rate * (reward_t + self.gamma *
                      self.q_matrix[self.next_state, next_action] - self.q_matrix[self.state, int(action_t + 1)])      
+        
