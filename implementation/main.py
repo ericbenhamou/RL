@@ -60,16 +60,16 @@ method_type = 'Q-Learning'
 #method_type = 'SARSA'
 random_init = True
 
-trading_type = 'daytrading'
-#trading_type = 'fixed_period'
-#trading_type = 'hold'
+trading_rule = 'daytrading'
+#trading_rule = 'fixed_period'
+#trading_rule = 'hold'
 
 no_trade_reward = -1
 
 # type of reinforcement learning method
 rl1 = rlm.Rl_linear(r_t, N, M, method_type, alpha_linear, gamma, random_init, mean, sigma)
 rl2 = rlm.Rl_full_matrix(r_t, N, M, method_type, alpha_grid, gamma, random_init, mean, sigma)
-mdp = Mdp( rl1, r_t, L, transaction_cost, no_trade_reward, trading_type )
+mdp = Mdp( rl1, r_t, L, transaction_cost, no_trade_reward, trading_rule )
 
 # computes return
 actions = []
@@ -90,11 +90,10 @@ for iter in range(iterations_nb):
         # learn
         mdp.rl_method.learn(t, action_t, reward_t )
 
-    equity = compute_episode_return(prices, r_t, mdp.action, trading_type, L, transaction_cost)
+    equity = mdp.compute_episode_return()
     actions.append(mdp.action)
     equity_lines.append(equity)
     
-
 # compute final action
 final_action = np.zeros(actions[0].shape[0])
 for action_i in actions:
@@ -111,8 +110,7 @@ for i in range(final_action.size):
         final_action[i] = 1
 
 # compute final capital
-final_capital = compute_episode_return( prices, r_t, final_action, \
-    trading_type, L, transaction_cost)
+final_capital = mdp.compute_episode_return( final_action )
 
 avg_capital = 0
 for equity_i in equity_lines:

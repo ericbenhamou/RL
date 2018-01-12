@@ -8,7 +8,7 @@ Created on Thu Jan 11 08:30:53 2018
 VERBOSE = True
 
 import numpy as np
-from utils import sharpe_lg_term, sharpe
+from utils import sharpe_lg_term, sharpe, compute_episode_return
 
 class Mdp:
     def __init__(self, rl_method, r_t, L, transaction_cost, no_trade_reward, trading_rule):
@@ -23,6 +23,10 @@ class Mdp:
         self.trading_rule = trading_rule
         self.no_trade_reward = no_trade_reward
         self.last_position_time = -self.L -1
+        self.index_prices = np.zeros(self.T_max)
+        self.index_prices[0] = r_t[0]
+        for t in range(1, r_t.shape[0]):
+            self.index_prices[t]=self.index_prices[t-1]*r_t[t]
 
     # return initial state        
     def reset(self, t0):
@@ -57,3 +61,9 @@ class Mdp:
                 
         next_state = self.rl_method.update(t, self.action)
         return (next_state, self.reward[t])
+    
+    
+    def compute_episode_return(self, action = None ):
+        return compute_episode_return( self.index_prices, self.r_t, \
+                self.action if action is None else action, \
+                self.trading_rule, self.L, self.transaction_cost)
