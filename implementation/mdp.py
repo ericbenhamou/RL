@@ -41,7 +41,7 @@ class Mdp:
         
         if self.trading_rule == 'daytrading':
             if action_t != 0 :
-                self.reward[t] = sharpe(action_t * self.r_t[t + 2 - self.L:t + 2] - self.transaction_cost, self.L) 
+                self.reward[t] = sharpe(action_t * self.r_t[t + 1 - self.L:t + 1] - self.transaction_cost, self.L) 
             else:
                 self.reward[t] = self.no_trade_reward
         elif self.trading_rule == 'fixed_period':

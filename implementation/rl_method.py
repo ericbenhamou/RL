@@ -23,6 +23,8 @@ class Rl_Method(metaclass=ABCMeta):
         pass
     def best_action(self):
         pass
+    def next_action(self):
+        pass
     def learn(self, t, action_t, reward_t ):
         pass
         
@@ -49,6 +51,7 @@ class Rl_linear(Rl_Method):
         self.mean = mean
         self.sigma = sigma
         self.squashing_dim = squashing_dim
+        self.__visited_states_actions = {}
         self.__initialize(r_t)
         
     # a set of private functions
@@ -74,12 +77,15 @@ class Rl_linear(Rl_Method):
         self.next_states[0] = 1
         self.next_states[1:self.N + 1] = self.f_t[t0 - self.N + 1:t0 + 1]
         self.next_states[self.N + 1:self.N + self.M + 1] = action[t0 - self.M:t0]
+        self.__visited_states_actions = {}
         self.theta = np.random.normal( np.sign(self.theta[-1]), self.sigma, self.N + 2 + self.M) \
             if self.random_init else np.zeros(self.N + 2 + self.M) + np.sign(self.theta[-1])
+                
         return self.next_states
 
     # return next state, reward
     def update(self, t, action ):
+        self.__visited_states_actions[self.__hash_state_action(action[t])] = 1
         self.__shift_steps(self.states, t-1, action)
         self.__shift_steps(self.next_states, t, action)
         return self.next_states
@@ -93,7 +99,6 @@ class Rl_linear(Rl_Method):
     '''
     def __Gradient_Q(self, states, action):
         return np.append(states, action)
-    
     
     def best_action(self):
         return np.sign(self.theta[-1])
@@ -123,6 +128,18 @@ class Rl_linear(Rl_Method):
         learning_rate = self.alpha 
         self.theta += learning_rate * d_k * self.__Gradient_Q(self.states, action_t) 
 
+    def __hash_state_action(self, action ):
+        tmp_state = 0
+        for fi in self.states:
+            tmp_state = tmp_state * (self.squashing_dim + 1) + fi
+        tmp_action = action + 1
+        return int(tmp_state + tmp_action)
+
+    def next_action(self):
+        next_action = self.best_action()
+        if self.__hash_state_action(next_action) not in self.__visited_states_actions.keys():
+            next_action = np.random.randint(-1, 2)
+        return next_action
 
 '''
 Full matrix method
@@ -207,4 +224,9 @@ class Rl_full_matrix(Rl_Method):
             next_action = self.next_state
         self.q_matrix[self.state, int(action_t + 1)] += learning_rate * (reward_t + self.gamma *
                      self.q_matrix[self.next_state, next_action] - self.q_matrix[self.state, int(action_t + 1)])      
-        
+
+    def next_action(self):
+        next_action = self.best_action()
+        if self.N_matrix[self.state, int(next_action + 1)] == 0:
+            next_action = np.random.randint(-1, 2)
+        return next_action

@@ -41,7 +41,7 @@ transaction_cost = 0#0.0019
 epsilons = [0.025, 0.05, 0.1]
 epsilon = epsilons[2]
 squashing_dim = 2
-iterations_nb = 100
+iterations_nb = 50
 
 # load data
 data_object = Data_loader(file, folder)
@@ -64,7 +64,7 @@ trading_rule = 'daytrading'
 #trading_rule = 'fixed_period'
 #trading_rule = 'hold'
 
-no_trade_reward = -1
+no_trade_reward = 0
 
 # type of reinforcement learning method
 rl1 = rlm.Rl_linear(r_t, N, M, method_type, alpha_linear, gamma, random_init, mean, sigma)
@@ -75,7 +75,7 @@ mdp = Mdp( rl1, r_t, L, transaction_cost, no_trade_reward, trading_rule )
 actions = []
 equity_lines = []
 start = max(N, L, M)
-end = T_max-1 if trading_type != 'fixed_period' else T_max-L
+end = T_max-1 if trading_rule != 'fixed_period' else T_max-L
 
 for iter in range(iterations_nb):
     state = mdp.reset(start)
@@ -84,6 +84,7 @@ for iter in range(iterations_nb):
         if np.random.rand() < epsilon:
             action_t = np.random.randint(-1, 2)
         else:
+            #action_t = mdp.rl_method.next_action()
             action_t = mdp.rl_method.best_action()
         # update
         next_state, reward_t = mdp.step(t, action_t)
