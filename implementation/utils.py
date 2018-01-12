@@ -21,18 +21,24 @@ def squashing_function(x, a=2, b=1, c=1e15, d=0, round=False):
 sharpe ratio over l period
 '''
 def sharpe(g, l):
-    return g[-1] / np.sqrt(np.var(g[-l:]))
+    if np.var(g[-l:]) > 1e-10:
+        return np.mean(g[-l:]) / np.sqrt(np.var(g[-l:]))
+    else:
+        return 0
 
-def sharpe_lg_term(g, l):
-    return np.mean(g[-l:]) / np.sqrt(np.var(g[-l:]))
+def sharpe_short_term(g, l):
+    if np.var(g[-l:]) > 1e-10:
+        return g[-l] / np.sqrt(np.var(g[-l:]))
+    else:
+        return 0
 
 
-def compute_episode_return(prices,r_t,action,trading_rule,L,transaction_cost):
+def compute_episode_return(prices, r_t,action, trading_rule, L, transaction_cost):
     T_max = action.shape[0]
     equity = np.zeros(T_max )
     equity[:] = 1
     
-    if trading_rule == 'daytrading':
+    if trading_rule.startswith('daytrading'):
         for t in range(T_max - 1):
             equity[t + 1] = equity[t] * (1 + action[t] * r_t[t + 1]-transaction_cost*(action[t]!=0))
 

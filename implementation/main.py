@@ -37,7 +37,7 @@ gamma = 0.95
 mean = 0.00
 sigma = 0.01
 
-transaction_cost = 0#0.0019
+transaction_cost = 0 #0.0019
 epsilons = [0.025, 0.05, 0.1]
 epsilon = epsilons[2]
 squashing_dim = 2
@@ -60,22 +60,24 @@ method_type = 'Q-Learning'
 #method_type = 'SARSA'
 random_init = True
 
-trading_rule = 'daytrading'
+#trading_rule = 'daytrading'
+#trading_rule = 'daytrading2'
 #trading_rule = 'fixed_period'
 #trading_rule = 'hold'
+trading_rule = 'daytrading2'
 
 no_trade_reward = 0
 
 # type of reinforcement learning method
 rl1 = rlm.Rl_linear(r_t, N, M, method_type, alpha_linear, gamma, random_init, mean, sigma)
 rl2 = rlm.Rl_full_matrix(r_t, N, M, method_type, alpha_grid, gamma, random_init, mean, sigma)
-mdp = Mdp( rl1, r_t, L, transaction_cost, no_trade_reward, trading_rule )
+mdp = Mdp( rl2, r_t, L, transaction_cost, no_trade_reward, trading_rule )
 
 # computes return
 actions = []
 equity_lines = []
 start = max(N, L, M)
-end = T_max-1 if trading_rule != 'fixed_period' else T_max-L
+end = T_max-L
 
 for iter in range(iterations_nb):
     state = mdp.reset(start)
@@ -84,8 +86,8 @@ for iter in range(iterations_nb):
         if np.random.rand() < epsilon:
             action_t = np.random.randint(-1, 2)
         else:
-            #action_t = mdp.rl_method.next_action()
-            action_t = mdp.rl_method.best_action()
+            action_t = mdp.rl_method.next_action()
+            #action_t = mdp.rl_method.best_action()
         # update
         next_state, reward_t = mdp.step(t, action_t)
         # learn

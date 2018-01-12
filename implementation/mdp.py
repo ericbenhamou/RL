@@ -8,7 +8,7 @@ Created on Thu Jan 11 08:30:53 2018
 VERBOSE = True
 
 import numpy as np
-from utils import sharpe_lg_term, sharpe, compute_episode_return
+from utils import sharpe_short_term, sharpe, compute_episode_return
 
 class Mdp:
     def __init__(self, rl_method, r_t, L, transaction_cost, no_trade_reward, trading_rule):
@@ -41,19 +41,24 @@ class Mdp:
         
         if self.trading_rule == 'daytrading':
             if action_t != 0 :
-                self.reward[t] = sharpe(action_t * self.r_t[t + 1 - self.L:t + 1] - self.transaction_cost, self.L) 
+                self.reward[t] = sharpe(action_t * self.r_t[t + 1:t + self.L + 1] - self.transaction_cost/2, self.L) 
+            else:
+                self.reward[t] = self.no_trade_reward
+        elif self.trading_rule == 'daytrading2':
+            if action_t != 0 :
+                self.reward[t] = sharpe_short_term( action_t * self.r_t[t + 1:t + self.L + 1] - self.transaction_cost/2, self.L) 
             else:
                 self.reward[t] = self.no_trade_reward
         elif self.trading_rule == 'fixed_period':
             if action_t != 0 and self.last_position_time + self.L < t:
-                self.reward[t] = sharpe_lg_term(action_t * self.r_t[t + 1:t + self.L + 1] - self.transaction_cost/self.L, self.L) 
+                self.reward[t] = sharpe(action_t * self.r_t[t + 1:t + self.L + 1] - self.transaction_cost/2, self.L) 
                 self.last_position_time = t
             else:
                 self.reward[t] = self.no_trade_reward
                 
         elif self.trading_rule == 'hold':
             if self.action[t] != self.action[t-1] and self.action[t] != 0:
-                self.reward[t] = sharpe_lg_term( self.action[t] * self.r_t[t + 1:t + self.L + 1] - self.transaction_cost/self.L, self.L)
+                self.reward[t] = sharpe( self.action[t] * self.r_t[t + 1:t + self.L + 1] - self.transaction_cost/2, self.L)
             else:
                 self.reward[t] = self.no_trade_reward
         else:
