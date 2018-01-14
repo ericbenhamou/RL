@@ -11,22 +11,23 @@ from scipy.special import expit
 '''
 logistic function
 '''
+VERBOSE = True
 
-
-def squashing_function(x, a=2, b=1, c=1e15, d=0, round=False):
-    return a * expit(c * x - np.log(b)) - \
-        d if ~round else np.round(a * expit(c * x - np.log(b)) - d)
+def squashing_function(x, a=2, b=1, c=1e15, d=1):
+    return a * expit(c * x - np.log(b)) - d 
 
 '''
 sharpe ratio over l period
 '''
-def sharpe(g, l):
+def sharpe(g):
+    l = g.shape[0]
     if np.var(g[-l:]) > 1e-10:
         return np.mean(g[-l:]) / np.sqrt(np.var(g[-l:]))
     else:
         return 0
 
-def sharpe_short_term(g, l):
+def sharpe_short_term(g):
+    l = g.shape[0]
     if np.var(g[-l:]) > 1e-10:
         return g[-l] / np.sqrt(np.var(g[-l:]))
     else:
@@ -37,21 +38,26 @@ def compute_episode_return(prices, r_t,action, trading_rule, L, transaction_cost
     T_max = action.shape[0]
     equity = np.zeros(T_max )
     equity[:] = 1
-    
+    trades_nb = 0
+    #handle different cases
     if trading_rule.startswith('daytrading'):
-        for t in range(T_max - 1):
-            equity[t + 1] = equity[t] * (1 + action[t] * r_t[t + 1]-transaction_cost*(action[t]!=0))
-
+        for t in range(1, T_max - 1):
+            equity[t + 1] = equity[t] * (1 + action[t] * r_t[t + 1] \
+                  - transaction_cost*(action[t]!=action[t-1]) \
+                  - transaction_cost*(action[t]*action[t-1]==-1))
+            trades_nb += action[t]!=action[t-1] + action[t]*action[t-1]==-1
+        trades_nb = trades_nb / 2
     elif trading_rule == 'fixed_period':
         last_trading_time = -100
         t = 0
         while t < T_max - L:
-            if action[t] != 0 and last_trading_time + L < t:
+            if action[t] != 0 and t >= last_trading_time + L:
                 last_trading_time = t
                 equity[t + 1:t + L] = equity[t]
                 equity[t + L] = equity[t] * \
-                    (1 + action[t] * (prices[t + L]/prices[t]-1)-transaction_cost)
+                    (1 + action[t] * (prices[t + L]/prices[t]-1)-2*transaction_cost)
                 t = t + L
+                trades_nb += 1
             else:
                 equity[t + 1] = equity[t]
                 t = t + 1
@@ -59,8 +65,7 @@ def compute_episode_return(prices, r_t,action, trading_rule, L, transaction_cost
         while t < T_max:
             equity[t]= equity[t - 1]
             t = t + 1
-
-    elif trading_rule == 'hold':
+    elif trading_rule.startswith('hold'):
         t = 1
         in_position = False
         last_trading_time = -100
@@ -68,8 +73,9 @@ def compute_episode_return(prices, r_t,action, trading_rule, L, transaction_cost
             if action[t] != action[t-1]:
                 if in_position:
                     in_position = False
+                    trades_nb += 1
                     equity[t] = equity[last_trading_time] * \
-                         (1 - action[t] * (prices[t]/prices[last_trading_time]-1)-transaction_cost)
+                         (1 - action[t] * (prices[t]/prices[last_trading_time]-1)-2*transaction_cost)
                     if action[t] != 0:
                         in_position = True
                         last_trading_time = t
@@ -83,4 +89,4 @@ def compute_episode_return(prices, r_t,action, trading_rule, L, transaction_cost
     else:
         raise ValueError('invalid trading rule: supported daytrading, fixed_period and hold')
                 
-    return equity
+    return equity, trades_nb

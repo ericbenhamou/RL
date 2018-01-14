@@ -26,7 +26,7 @@ files = ['Generali_G.MI.csv',   #0
          'Fiat_FCA.MI.csv',
          'TelecomItalia_TI.csv',
          'Saipem_SPM.MI.csv']   #4
-file = files[3]
+file = files[4]
 field = 'Close'
 N = 5
 M = 1
@@ -34,10 +34,8 @@ L = 22
 alpha_linear = 0.005
 alpha_grid = 0.05
 gamma = 0.95
-mean = 0.00
-sigma = 0.01
 
-transaction_cost = 0 #0.0019
+transaction_cost = 0.0019
 epsilons = [0.025, 0.05, 0.1]
 epsilon = epsilons[2]
 squashing_dim = 2
@@ -60,18 +58,28 @@ method_type = 'Q-Learning'
 #method_type = 'SARSA'
 random_init = True
 
-#trading_rule = 'daytrading'
-#trading_rule = 'daytrading2'
-#trading_rule = 'fixed_period'
-#trading_rule = 'hold'
-trading_rule = 'daytrading2'
-
-no_trade_reward = 0
+trading_rules = [ 
+    'daytrading0', 
+    'daytrading1', 
+    'daytrading2', 
+    'daytrading3', 
+    'daytrading4', 
+    'fixed_period', # index 5
+    'hold0',        # index 6
+    'hold1',        # index 7
+    'hold2' ]       # index 8
+trading_rule = trading_rules[5] #222
 
 # type of reinforcement learning method
-rl1 = rlm.Rl_linear(r_t, N, M, method_type, alpha_linear, gamma, random_init, mean, sigma)
+rl1 = rlm.Rl_linear(r_t, N, M, method_type, alpha_linear, gamma, random_init)
+mean = 0.00
+sigma = 0.01
 rl2 = rlm.Rl_full_matrix(r_t, N, M, method_type, alpha_grid, gamma, random_init, mean, sigma)
-mdp = Mdp( rl2, r_t, L, transaction_cost, no_trade_reward, trading_rule )
+no_trade_reward = 0
+mdp = Mdp( rl1, r_t, L, transaction_cost, no_trade_reward, trading_rule )
+
+# good result: 0 RL1 SARSA Trading rule 2 no_trade_reward = 0.0019
+
 
 # computes return
 actions = []
@@ -86,14 +94,14 @@ for iter in range(iterations_nb):
         if np.random.rand() < epsilon:
             action_t = np.random.randint(-1, 2)
         else:
-            action_t = mdp.rl_method.next_action()
-            #action_t = mdp.rl_method.best_action()
+            #action_t = mdp.rl_method.next_action()
+            action_t = mdp.rl_method.best_action()
         # update
         next_state, reward_t = mdp.step(t, action_t)
         # learn
         mdp.rl_method.learn(t, action_t, reward_t )
 
-    equity = mdp.compute_episode_return()
+    (equity, unused ) = mdp.compute_episode_return()
     actions.append(mdp.action)
     equity_lines.append(equity)
     
@@ -113,11 +121,14 @@ for i in range(final_action.size):
         final_action[i] = 1
 
 # compute final capital
-final_capital = mdp.compute_episode_return( final_action )
+(final_capital, trades_nb) = mdp.compute_episode_return( final_action )
 
 avg_capital = 0
+percent_positive = 0
 for equity_i in equity_lines:
-    avg_capital += equity_i[-L-1]
+    avg_capital += equity_i[-1]
+    percent_positive += equity_i[-1]>1
+percent_positive /= iterations_nb
 avg_capital  /= iterations_nb
 
 # plot result
@@ -132,10 +143,20 @@ if plot_result:
     plot_3_ts(dates, prices, final_action, final_capital,
               'Time', 'Price',  'Action', 'Capital', 'Final Rules')
     plt.show()
-
+    
 # print final value of capital
-print('final capital', final_capital[-1])
-print('avg capital', avg_capital)
+print('final capital {:.2f}'.format(final_capital[-1]))
+print('median capital {:.2f}'.format(avg_capital))
 year_frac = pd.Timedelta( dates[-1] - dates[1]).days / 365.25
-print('trade per year', final_action[final_action!=0].shape[0]/year_frac)
-#plt.plot(rl.theta)
+print('trade per year {:.2f}'.format(trades_nb/year_frac))
+avg_return = final_capital[-1] ** (1 / year_frac) - 1
+print('avg  return {:.2f}%'.format(avg_return * 100))
+long_ret = (prices[-1] / prices[0]) ** (1 / year_frac) - 1
+print('long return {:.2f}%'.format(long_ret * 100))
+print('% positive = {:.2f}%'.format(percent_positive * 100))
+
+
+if type(mdp.rl_method) == 'rl_method.Rl_linear':
+    plt.title('theta')
+    plt.plot(mdp.rl_method.theta)
+
