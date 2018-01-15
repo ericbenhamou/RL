@@ -42,11 +42,12 @@ this is useful in case of high dimension state space
 
 
 class Rl_linear(Rl_Method):
-    def __init__(self, r_t, N, M, method_type, alpha,
+    def __init__(self, epsilon, r_t, N, M, method_type, alpha,
                  gamma, random_init, squashing_dim=2):
         if method_type != 'Q-Learning' and method_type != 'SARSA':
             raise ValueError(
                 'invalid algorithm: supported Q-Learning and SARSA')
+        self.epsilon = epsilon
         self.method_type = method_type
         self.N = N
         self.M = M
@@ -80,16 +81,14 @@ class Rl_linear(Rl_Method):
         self.t = t0
         self.states[0] = 1
         self.states[1:self.N + 1] = self.f_t[t0 - self.N:t0]
-        self.states[self.N + 1:self.N + self.M +
-                    1] = action[t0 - self.M - 1:t0 - 1]
+        self.states[self.N + 1:self.N + self.M + 1] = action[t0 - self.M - 1:t0 - 1]
         # next states
         self.next_states[0] = 1
         self.next_states[1:self.N + 1] = self.f_t[t0 - self.N + 1:t0 + 1]
-        self.next_states[self.N + 1:self.N +
-                         self.M + 1] = action[t0 - self.M:t0]
+        self.next_states[self.N + 1:self.N + self.M + 1] = action[t0 - self.M:t0]
         self.__visited_states_actions = {}
-        self.theta = np.random.uniform(-1.0, 1.0, self.N + 2 + self.M) if self.random_init else np.zeros(
-            self.N + 2 + self.M) + np.sign(self.theta[-1])
+        self.theta = np.random.uniform(-1.0, 1.0, self.N + 2 + self.M) \
+            if self.random_init else np.zeros(self.N + 2 + self.M) + np.sign(self.theta[-1])
         return self.next_states
 
     # return next state, reward
@@ -103,7 +102,7 @@ class Rl_linear(Rl_Method):
     # The Q linearized function
     def __Q(self, states, action):
         return np.sum(self.theta[:self.N + self.M + 1] *
-                      states) + self.theta[self.N + self.M + 1] * action
+            states) + self.theta[self.N + self.M + 1] * action
 
     # The corresponding gradient
     def __Gradient_Q(self, states, action):
@@ -119,34 +118,18 @@ class Rl_linear(Rl_Method):
 
     def learn(self, t, action_t, reward_t):
         if self.method_type == 'Q-Learning':
-            best_action = self.best_action()
-            d_k = reward_t + self.gamma * \
-                self.__Q(self.next_states, best_action) - \
-                self.__Q(self.states, action_t)
-            if VERBOSE:
-                print(t, ': states:', self.states)
-            if VERBOSE:
-                print(t, ': next_states:', self.next_states)
-            if VERBOSE:
-                print(t, ': theta:', self.theta)
-            if VERBOSE:
-                print(t, ': reward[t]:', reward_t)
-            if VERBOSE:
-                print(t, ': Q[t]:', self.__Q(self.next_states, best_action))
-            if VERBOSE:
-                print(
-                    t,
-                    ': Gradient:',
-                    self.__Gradient_Q(
-                        self.states,
-                        action_t))
+            next_action = self.best_action()
         elif self.method_type == 'SARSA':
-            d_k = reward_t + self.gamma * \
-                self.__Q(self.next_states, action_t) - \
-                self.__Q(self.states, action_t)
+            if np.random.rand() < self.epsilon:
+                next_action = np.random.randint(-1, 2)
+            else:
+                next_action = self.best_action()
         else:
             raise ValueError(
                 'invalid algorithm: supported Q-Learning and SARSA')
+        d_k = reward_t + self.gamma * \
+            self.__Q(self.next_states, next_action) - \
+            self.__Q(self.states, action_t)
         learning_rate = self.alpha
         self.theta += learning_rate * d_k * \
             self.__Gradient_Q(self.states, action_t)
@@ -156,7 +139,7 @@ class Rl_linear(Rl_Method):
         for fi in self.states:
             tmp_state = tmp_state * (self.squashing_dim + 1) + fi
         tmp_action = action + 1
-        return int(tmp_state + tmp_action)
+        return tmp_state + tmp_action
 
     def next_action(self):
         next_action = self.best_action()
@@ -173,12 +156,13 @@ Bet method for low dimension state space
 
 
 class Rl_full_matrix(Rl_Method):
-    def __init__(self, r_t, N, M, method_type, alpha, gamma,
+    def __init__(self, epsilon, r_t, N, M, method_type, alpha, gamma,
                  random_init, mean, sigma, squashing_dim=2):
         if method_type != 'Q-Learning' and method_type != 'SARSA':
             raise ValueError(
                 'invalid algorithm: supported Q-Learning and SARSA')
         self.method_type = method_type
+        self.epsilon = epsilon
         self.N = N
         self.M = M
         self.random_init = random_init
@@ -238,24 +222,17 @@ class Rl_full_matrix(Rl_Method):
     def learn(self, t, action_t, reward_t):
         learning_rate = self.alpha / \
             self.N_matrix[self.state, int(action_t + 1)]
+        
         if self.method_type == 'Q-Learning':
             next_action = self.best_action()
-            if VERBOSE:
-                print(t, ': states:', self.state)
-            if VERBOSE:
-                print(t, ': next_states:', self.next_state)
-            if VERBOSE:
-                print(t, ': best_action:', next_action)
-            if VERBOSE:
-                print(t, ': learning_rate:', learning_rate)
-            if VERBOSE:
-                print(t, ': reward[t]:', reward_t)
-            if VERBOSE:
-                print(t, ': action[t]:', action_t)
         elif self.method_type == 'SARSA':
-            next_action = np.argmax(self.q_matrix[self.state, :]) - 1
-        self.q_matrix[self.state, int(action_t + 1)] += learning_rate * (reward_t + self.gamma *
-                                                                         self.q_matrix[self.next_state, int(next_action + 1)] - self.q_matrix[self.state, int(action_t + 1)])
+            if np.random.rand() < self.epsilon:
+                next_action = np.random.randint(-1, 2)
+            else:
+                next_action = self.best_action()
+        self.q_matrix[self.state, int(action_t + 1)] += learning_rate \
+            * (reward_t + self.gamma * self.q_matrix[self.next_state, int(next_action + 1)] \
+                - self.q_matrix[self.state, int(action_t + 1)])
 
     def next_action(self):
         next_action = self.best_action()

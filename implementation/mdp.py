@@ -42,36 +42,33 @@ class Mdp:
         # end = t+2
         if self.trading_rule == 'daytrading0':
             if action_t != 0:
-                self.reward[t] = sharpe(self.action[t +
-                                                    1 -
-                                                    self.L:t +
-                                                    1] *
-                                        self.r_t[t +
-                                                 2 -
-                                                 self.L:t +
-                                                 2] -
-                                        self.transaction_cost)
+                self.reward[t] = sharpe(self.action[t + 1 - self.L:t + 1] \
+                           * self.r_t[t + 2 - self.L:t +2] \
+                           - self.transaction_cost)
             else:
                 self.reward[t] = self.no_trade_reward
         # end = t+2
         elif self.trading_rule == 'daytrading1':
             if action_t != 0:
                 self.reward[t] = sharpe(
-                    self.action[t] * self.r_t[t + 2 - self.L:t + 2] - self.transaction_cost)
+                    self.action[t] * self.r_t[t + 2 - self.L:t + 2] \
+                        - self.transaction_cost)
             else:
                 self.reward[t] = self.no_trade_reward
         # start = t+1
         elif self.trading_rule == 'daytrading2':
             if action_t != 0:
                 self.reward[t] = sharpe(
-                    self.action[t] * self.r_t[t + 1:t + self.L + 1] - self.transaction_cost)
+                    self.action[t] * self.r_t[t + 1:t + self.L + 1] \
+                        - self.transaction_cost)
             else:
                 self.reward[t] = self.no_trade_reward
         # start = t+1
         elif self.trading_rule == 'daytrading3':
             if action_t != 0:
                 self.reward[t] = sharpe_short_term(
-                    self.action[t] * self.r_t[t + 1:t + self.L + 1] - self.transaction_cost)
+                    self.action[t] * self.r_t[t + 1:t + self.L + 1] \
+                        - self.transaction_cost)
             else:
                 self.reward[t] = self.no_trade_reward
         elif self.trading_rule == 'daytrading4':
@@ -84,7 +81,8 @@ class Mdp:
         elif self.trading_rule == 'fixed_period':
             if action_t != 0 and t >= self.last_position_time + self.L:
                 self.reward[t] = sharpe(
-                    self.action[t] * self.r_t[t + 1:t + self.L + 1] - self.transaction_cost)
+                    self.action[t] * self.r_t[t + 1:t + self.L + 1] \
+                        - self.transaction_cost)
                 self.last_position_time = t
             else:
                 self.reward[t] = self.no_trade_reward
@@ -92,37 +90,31 @@ class Mdp:
         elif self.trading_rule == 'hold0':
             if self.action[t] != self.action[t - 1] and self.action[t] != 0:
                 self.reward[t] = sharpe_short_term(
-                    self.action[t] * self.r_t[t + 1:t + self.L + 1] - self.transaction_cost)
+                    self.action[t] * self.r_t[t + 1:t + self.L + 1] \
+                        - self.transaction_cost)
             else:
                 self.reward[t] = self.no_trade_reward
         # start = t+1
         elif self.trading_rule == 'hold1':
             if self.action[t] != self.action[t - 1] and self.action[t] != 0:
                 self.reward[t] = sharpe(
-                    self.action[t] * self.r_t[t + 1:t + self.L + 1] - self.transaction_cost)
+                    self.action[t] * self.r_t[t + 1:t + self.L + 1] \
+                        - self.transaction_cost)
             else:
                 self.reward[t] = self.no_trade_reward
         elif self.trading_rule == 'hold2':
             if self.action[t] != self.action[t - 1] and self.action[t] != 0:
-                self.reward[t] = sharpe(self.action[t +
-                                                    1 -
-                                                    self.L:t +
-                                                    1] *
-                                        self.r_t[t +
-                                                 2 -
-                                                 self.L:t +
-                                                 2] -
-                                        self.transaction_cost)
+                self.reward[t] = sharpe(self.action[t + 1 - self.L:t + 1] \
+                    * self.r_t[t + 2 - self.L:t + 2] - self.transaction_cost)
             else:
                 self.reward[t] = self.no_trade_reward
         else:
-            raise ValueError(
-                'invalid trading rule: supported daytrading, fixed_period and hold')
+            raise ValueError('invalid trading rule: supported daytrading, fixed_period and hold')
 
         next_state = self.rl_method.update(t, self.action)
         return (next_state, self.reward[t])
 
     def compute_episode_return(self, action=None):
         return compute_episode_return(self.index_prices, self.r_t,
-                                      self.action if action is None else action,
-                                      self.trading_rule, self.L, self.transaction_cost)
+                self.action if action is None else action,
+                self.trading_rule, self.L, self.transaction_cost)

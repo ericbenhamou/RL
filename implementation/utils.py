@@ -5,6 +5,7 @@ Created on Tue Jan  5 15:11:58 2018
 
 #import declaration
 import numpy as np
+import math
 from scipy.special import expit
 
 
@@ -14,7 +15,7 @@ logistic function
 VERBOSE = True
 
 
-def squashing_function(x, a=2, b=1, c=1e15, d=1):
+def squashing_function(x, a=2, b=1, c=1e5, d=1):
     return a * expit(c * x - np.log(b)) - d
 
 
@@ -24,9 +25,9 @@ sharpe ratio over l period
 
 
 def sharpe(g):
-    l = g.shape[0]
-    if np.var(g[-l:]) > 1e-10:
-        return np.mean(g[-l:]) / np.sqrt(np.var(g[-l:]))
+    L = g.shape[0]
+    if np.var(g[-L:]) > 1e-10:
+        return np.mean(g[-L:]) / np.sqrt(np.var(g[-L:])) * math.sqrt(L-1)/math.sqrt(L)
     else:
         return 0
 
@@ -49,9 +50,8 @@ def compute_episode_return(
     if trading_rule.startswith('daytrading'):
         for t in range(1, T_max - 1):
             equity[t + 1] = equity[t] * (1 + action[t] * r_t[t + 1]
-                                         - transaction_cost *
-                                         (action[t] != action[t - 1])
-                                         - transaction_cost * (action[t] * action[t - 1] == -1))
+               - transaction_cost *(action[t] != action[t - 1])
+               - transaction_cost * (action[t] * action[t - 1] == -1))
             trades_nb += action[t] != action[t - 1] + \
                 action[t] * action[t - 1] == -1
         trades_nb = trades_nb / 2
@@ -64,7 +64,7 @@ def compute_episode_return(
                 equity[t + 1:t + L] = equity[t]
                 equity[t + L] = equity[t] * \
                     (1 + action[t] * (prices[t + L] /
-                                      prices[t] - 1) - 2 * transaction_cost)
+                    prices[t] - 1) - 2 * transaction_cost)
                 t = t + L
                 trades_nb += 1
             else:

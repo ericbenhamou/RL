@@ -18,7 +18,6 @@ from utils import compute_episode_return
 np.random.seed(1335)
 np.set_printoptions()
 
-
 # initial parameters
 folder = 'data\\'
 files = ['Generali_G.MI.csv',  # 0
@@ -26,12 +25,12 @@ files = ['Generali_G.MI.csv',  # 0
          'Fiat_FCA.MI.csv',
          'TelecomItalia_TI.csv',
          'Saipem_SPM.MI.csv']  # 4
-file = files[4]
+file = files[0]
 field = 'Close'
 N = 5
-M = 1
 L = 22
-alpha_linear = 0.005
+M = 1
+alpha_linear = 0.05
 alpha_grid = 0.05
 gamma = 0.95
 
@@ -54,8 +53,8 @@ r_t = r_t[:T_max]
 prices = prices[:T_max]
 dates = dates[:T_max]
 
-method_type = 'Q-Learning'
-#method_type = 'SARSA'
+#method_type = 'Q-Learning'
+method_type = 'SARSA'
 random_init = True
 
 trading_rules = [
@@ -71,19 +70,10 @@ trading_rules = [
 trading_rule = trading_rules[5]  # 222
 
 # type of reinforcement learning method
-rl1 = rlm.Rl_linear(r_t, N, M, method_type, alpha_linear, gamma, random_init)
+rl1 = rlm.Rl_linear(epsilon, r_t, N, M, method_type, alpha_linear, gamma, random_init)
 mean = 0.00
 sigma = 0.01
-rl2 = rlm.Rl_full_matrix(
-    r_t,
-    N,
-    M,
-    method_type,
-    alpha_grid,
-    gamma,
-    random_init,
-    mean,
-    sigma)
+rl2 = rlm.Rl_full_matrix(epsilon, r_t, N, M, method_type, alpha_grid, gamma, random_init, mean, sigma)
 no_trade_reward = 0
 mdp = Mdp(rl1, r_t, L, transaction_cost, no_trade_reward, trading_rule)
 
@@ -132,11 +122,13 @@ for i in range(final_action.size):
 # compute final capital
 (final_capital, trades_nb) = mdp.compute_episode_return(final_action)
 
+final_equity = []
 avg_capital = 0
 percent_positive = 0
 for equity_i in equity_lines:
     avg_capital += equity_i[-1]
     percent_positive += equity_i[-1] > 1
+    final_equity.append(equity_i[-1])
 percent_positive /= iterations_nb
 avg_capital /= iterations_nb
 
@@ -165,6 +157,6 @@ print('long return {:.2f}%'.format(long_ret * 100))
 print('% positive = {:.2f}%'.format(percent_positive * 100))
 
 
-if isinstance(mdp.rl_method, 'rl_method.Rl_linear'):
+if isinstance(mdp.rl_method, rlm.Rl_linear):
     plt.title('theta')
     plt.plot(mdp.rl_method.theta)
