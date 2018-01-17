@@ -108,11 +108,6 @@ class Rl_linear(Rl_Method):
 
     def best_action(self):
         return np.sign(self.theta[-1])
-#        q_short = - self.r_t[self.t] - self.transaction_cost
-#        q_neutral = self.r_t[self.t] 
-#        q_long = self.r_t[self.t] - self.transaction_cost
-#        qs = [q_short, q_neutral, q_long]
-#        return np.argmax(qs)-1
 
     '''
     The core of the algo that makes difference between on line and off line policy
