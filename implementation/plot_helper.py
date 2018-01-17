@@ -4,7 +4,7 @@ Created on Tue Jan  5 15:11:58 2018
 """
 
 import matplotlib.pyplot as plt
-
+import plot_utils as pu
 
 def plot_3_ts(
         dates,
@@ -24,6 +24,7 @@ def plot_3_ts(
     axarr[1].set_ylabel(y2_label)
     axarr[2].set_ylabel(y3_label)
     axarr[2].set_title(title, y=-0.75, fontsize=16)
+    pu.save_figure(plt, title, 'compare', lgd=None)
 
 
 def plot_array(dates, array, title):
@@ -31,3 +32,4 @@ def plot_array(dates, array, title):
     for plot_item in array:
         plt.plot(dates, plot_item)
     plt.title(title, fontsize=16)
+    pu.save_figure(plt, title, 'array', lgd=None)

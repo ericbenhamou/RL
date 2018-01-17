@@ -17,7 +17,7 @@ import numpy as np
 class Data_loader:
     def __init__(self, filename, folder, remove_null_nan=True):
         data_object = pd.read_csv(folder + filename, delimiter=',')
-        if remove_null_nan:
+        if remove_null_nan  and data_object['Close'].dtypes == 'object':
             data_object[data_object == 'null'] = np.nan
             data_object.dropna(how='any', inplace=True)
         self.data_object = data_object

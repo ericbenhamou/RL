@@ -39,9 +39,16 @@ def sharpe_short_term(g):
     else:
         return 0
 
+def sharpe_short_term2(g):
+    l = g.shape[0]
+    if np.var(g[-l:]) > 1e-10:
+        return g[-1] / np.sqrt(np.var(g[-l:]))
+    else:
+        return 0
+
 
 def compute_episode_return(
-        prices, r_t, action, trading_rule, L, transaction_cost):
+        prices, r_t, action, trading_rule, L, transaction_cost, verbose = False):
     T_max = action.shape[0]
     equity = np.zeros(T_max)
     equity[:] = 1
@@ -49,11 +56,11 @@ def compute_episode_return(
     # handle different cases
     if trading_rule.startswith('daytrading'):
         for t in range(1, T_max - 1):
+            trades_nb +=(action[t] != action[t - 1]) + \
+                (action[t] * action[t - 1] == -1)
             equity[t + 1] = equity[t] * (1 + action[t] * r_t[t + 1]
                - transaction_cost *(action[t] != action[t - 1])
                - transaction_cost * (action[t] * action[t - 1] == -1))
-            trades_nb += action[t] != action[t - 1] + \
-                action[t] * action[t - 1] == -1
         trades_nb = trades_nb / 2
     elif trading_rule == 'fixed_period':
         last_trading_time = -100
