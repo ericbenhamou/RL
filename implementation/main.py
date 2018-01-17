@@ -54,8 +54,8 @@ r_t = r_t[:T_max]
 prices = prices[:T_max]
 dates = dates[:T_max]
 
-#method_type = 'Q-Learning'
-method_type = 'SARSA'
+method_type = 'Q-Learning'
+#method_type = 'SARSA'
 random_init = True
 
 trading_rules = [
@@ -71,12 +71,13 @@ trading_rules = [
 trading_rule = trading_rules[3]  # 222
 
 # type of reinforcement learning method
+transaction_cost = 0
 rl1 = rlm.Rl_linear(transaction_cost, epsilon, r_t, N, M, method_type, alpha_linear, gamma, random_init)
 mean = 0.00
 sigma = 0.01
 rl2 = rlm.Rl_full_matrix(transaction_cost, epsilon, r_t, N, M, method_type, alpha_grid, gamma, random_init, mean, sigma)
 no_trade_reward = 0
-mdp = Mdp(rl1, r_t, L, transaction_cost, no_trade_reward, trading_rule)
+mdp = Mdp(rl2, r_t, L, transaction_cost, no_trade_reward, trading_rule)
 
 # good result: 0 RL1 SARSA Trading rule 2 no_trade_reward = 0.0019
 

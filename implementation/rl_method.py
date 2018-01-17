@@ -107,7 +107,7 @@ class Rl_linear(Rl_Method):
         return np.append(states, action_t)
 
     def best_action(self):
-        return np.sign(self.theta[-1])
+        return np.sign(self.theta[-1])-1
 
     '''
     The core of the algo that makes difference between on line and off line policy
