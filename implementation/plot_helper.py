@@ -15,7 +15,8 @@ def plot_3_ts(
         y1_label,
         y2_label,
         y3_label,
-        title):
+        title, 
+		save = False):
     fig, axarr = plt.subplots(3, sharex=True, sharey=False)
     axarr[0].plot(dates, data_1)
     axarr[1].plot(dates, data_2)
@@ -24,12 +25,12 @@ def plot_3_ts(
     axarr[1].set_ylabel(y2_label)
     axarr[2].set_ylabel(y3_label)
     axarr[2].set_title(title, y=-0.75, fontsize=16)
-    pu.save_figure(plt, title, 'compare', lgd=None)
+    if save: pu.save_figure(plt, title, 'compare', lgd=None)
 
 
-def plot_array(dates, array, title):
+def plot_array(dates, array, title, save = False):
     plt.figure()
     for plot_item in array:
         plt.plot(dates, plot_item)
     plt.title(title, fontsize=16)
-    pu.save_figure(plt, title, 'array', lgd=None)
+    if save: pu.save_figure(plt, title, 'array', lgd=None)

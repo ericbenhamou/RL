@@ -122,8 +122,7 @@ class Rl_linear(Rl_Method):
             else:
                 next_action = self.best_action()
         else:
-            raise ValueError(
-                'invalid algorithm: supported Q-Learning and SARSA')
+            raise ValueError('invalid algorithm: supported Q-Learning and SARSA')
         d_k = reward_t + self.gamma * \
             self.__Q(self.next_states, next_action) - \
             self.__Q(self.states, action_t)

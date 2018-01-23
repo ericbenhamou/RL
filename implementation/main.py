@@ -35,8 +35,8 @@ alpha_linear = 0.05
 alpha_grid = 0.05
 gamma = 0.95
 
-transaction_cost = 0.0019
-epsilons = [0.025, 0.05, 0]
+
+epsilons = [0.025, 0.05, 0.1]
 epsilon = epsilons[2]
 squashing_dim = 2
 iterations_nb = 50
