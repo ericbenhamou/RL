@@ -28,10 +28,8 @@ files = ['Generali_G.MI.csv',  # 0
          'Saipem_SPM.MI.csv']  # 4
 file = files[3]
 field = 'Close'
-N = 5
-L = 22
-M = 1
-alpha_linear = 0.05
+N = 5; L = 22; M = 1
+alpha_linear = 0.005
 alpha_grid = 0.05
 gamma = 0.95
 
@@ -56,7 +54,7 @@ dates = dates[:T_max]
 
 method_type = 'Q-Learning'
 #method_type = 'SARSA'
-random_init = True
+random_init = False
 
 trading_rules = [
     'daytrading0',
@@ -68,7 +66,7 @@ trading_rules = [
     'hold0',        # index 6
     'hold1',        # index 7
     'hold2']       # index 8
-trading_rule = trading_rules[3]  # 222
+trading_rule = trading_rules[5]  # 222
 
 # type of reinforcement learning method
 transaction_cost = 0
@@ -78,9 +76,6 @@ sigma = 0.01
 rl2 = rlm.Rl_full_matrix(transaction_cost, epsilon, r_t, N, M, method_type, alpha_grid, gamma, random_init, mean, sigma)
 no_trade_reward = 0
 mdp = Mdp(rl2, r_t, L, transaction_cost, no_trade_reward, trading_rule)
-
-# good result: 0 RL1 SARSA Trading rule 2 no_trade_reward = 0.0019
-
 
 # computes return
 actions = []
