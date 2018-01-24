@@ -16,13 +16,12 @@ import numpy as np
 
 class Data_loader:
     def __init__(self, filename, folder, remove_null_nan=True):
-        data_object = pd.read_csv(folder + filename, delimiter=',')
-        if remove_null_nan:
-            data_object[data_object == 'null'] = np.nan
-            data_object.dropna(how='any', inplace=True)
-        self.data_object = data_object
+        dataFrame = pd.read_csv(folder + filename, delimiter=',')
+        if remove_null_nan  and dataFrame['Close'].dtypes == 'object':
+            dataFrame[dataFrame == 'null'] = np.nan
+            dataFrame.dropna(how='any', inplace=True)
+        self.dataFrame = dataFrame
         self.convert_types()
-        self.returns = {}
 
     def convert_types(self):
         float64_columns = [
@@ -35,15 +34,15 @@ class Data_loader:
         datetype_columns = ['Date']
         int64_columns = ['Volume']
         for column in float64_columns:
-            if self.data_object[column].dtype != 'float64':
-                self.data_object[column] = pd.to_numeric(
-                    self.data_object[column])
+            if self.dataFrame[column].dtype != 'float64':
+                self.dataFrame[column] = pd.to_numeric(
+                    self.dataFrame[column])
         for column in int64_columns:
-            if self.data_object[column].dtype != 'int64':
-                self.data_object[column] = pd.to_numeric(
-                    self.data_object[column])
+            if self.dataFrame[column].dtype != 'int64':
+                self.dataFrame[column] = pd.to_numeric(
+                    self.dataFrame[column])
         for column in datetype_columns:
-            self.data_object[column] = pd.to_datetime(self.data_object[column])
+            self.dataFrame[column] = pd.to_datetime(self.dataFrame[column])
 
     def get_field(self, field_name):
-        return self.data_object[field_name].values
+        return self.dataFrame[field_name].values

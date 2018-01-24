@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import rl_method as rlm
+import plot_utils as pu
 from mdp import Mdp
 
 from data_processor import Data_loader
@@ -25,16 +26,14 @@ files = ['Generali_G.MI.csv',  # 0
          'Fiat_FCA.MI.csv',
          'TelecomItalia_TI.csv',
          'Saipem_SPM.MI.csv']  # 4
-file = files[0]
+file = files[3]
 field = 'Close'
-N = 5
-L = 22
-M = 1
-alpha_linear = 0.05
+N = 5; L = 22; M = 1
+alpha_linear = 0.005
 alpha_grid = 0.05
 gamma = 0.95
 
-transaction_cost = 0.0019
+
 epsilons = [0.025, 0.05, 0.1]
 epsilon = epsilons[2]
 squashing_dim = 2
@@ -53,9 +52,9 @@ r_t = r_t[:T_max]
 prices = prices[:T_max]
 dates = dates[:T_max]
 
-#method_type = 'Q-Learning'
-method_type = 'SARSA'
-random_init = True
+method_type = 'Q-Learning'
+#method_type = 'SARSA'
+random_init = False
 
 trading_rules = [
     'daytrading0',
@@ -70,15 +69,13 @@ trading_rules = [
 trading_rule = trading_rules[5]  # 222
 
 # type of reinforcement learning method
-rl1 = rlm.Rl_linear(epsilon, r_t, N, M, method_type, alpha_linear, gamma, random_init)
+transaction_cost = 0
+rl1 = rlm.Rl_linear(transaction_cost, epsilon, r_t, N, M, method_type, alpha_linear, gamma, random_init)
 mean = 0.00
 sigma = 0.01
-rl2 = rlm.Rl_full_matrix(epsilon, r_t, N, M, method_type, alpha_grid, gamma, random_init, mean, sigma)
+rl2 = rlm.Rl_full_matrix(transaction_cost, epsilon, r_t, N, M, method_type, alpha_grid, gamma, random_init, mean, sigma)
 no_trade_reward = 0
-mdp = Mdp(rl1, r_t, L, transaction_cost, no_trade_reward, trading_rule)
-
-# good result: 0 RL1 SARSA Trading rule 2 no_trade_reward = 0.0019
-
+mdp = Mdp(rl2, r_t, L, transaction_cost, no_trade_reward, trading_rule)
 
 # computes return
 actions = []
@@ -100,7 +97,7 @@ for iter in range(iterations_nb):
         # learn
         mdp.rl_method.learn(t, action_t, reward_t)
 
-    (equity, unused) = mdp.compute_episode_return()
+    (equity, unused) = mdp.compute_episode_return(None )
     actions.append(mdp.action)
     equity_lines.append(equity)
 
@@ -133,14 +130,15 @@ percent_positive /= iterations_nb
 avg_capital /= iterations_nb
 
 # plot result
+#pu.delete_all_png_file()
 plot_result = True
 if plot_result:
-    max_population = 30
+    max_population = 100
     max_plot = min(mdp.action.shape[0], max_population)
     plot_3_ts(dates, prices, actions[0], equity_lines[0],
               'Time', 'Price', 'Action', 'Capital', 'Single MC Path')
     plot_array(dates, equity_lines[:max_plot], 'Capital')
-    plot_array(dates, actions[:max_plot], 'Actions')
+    # plot_array(dates, actions[:max_plot], 'Actions')
     plot_3_ts(dates, prices, final_action, final_capital,
               'Time', 'Price', 'Action', 'Capital', 'Final Rules')
     plt.show()
